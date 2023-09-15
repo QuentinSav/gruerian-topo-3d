@@ -1,4 +1,4 @@
-#include "outing.h"
+#include "Outing.h"
 #include <iostream>
 #include <iomanip>
 #include <fstream>
