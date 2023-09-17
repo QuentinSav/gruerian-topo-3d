@@ -34,6 +34,7 @@
 # Ignore build artifacts
 build/
 bin/
+libs/
 lib/
 
 # Ignore IDE-specific files
