@@ -7,73 +7,10 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <cmath>
 
-static std::string ParseShader(const std::string& filepath)
-{
-    std::ifstream stream(filepath);
-    std::string line;
-    std::stringstream shaderString;
-    
-    while (getline(stream, line))
-    {
-        shaderString << line << std::endl;
-    }
+#include <Shader.h>
 
-    return shaderString.str();
-}
-
-static unsigned int CompileShader(unsigned int type, const std::string& source)
-{
-    unsigned int id = glCreateShader(type);
-    const char* src = source.c_str();
-    glShaderSource(id, 1, &src, nullptr);
-    glCompileShader(id);
-
-    // Check compilation status of the shader
-    int  success;
-    char infoLog[512];
-    glGetShaderiv(id, GL_COMPILE_STATUS, &success);
-    
-    if(!success)
-    {
-        glGetShaderInfoLog(id, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
-        glDeleteShader(id);
-        return 0;
-    }
-
-    return id;
-}
-
-static unsigned int CreateShader(const std::string& vertexShaderFilePath, const std::string& fragmentShaderFilePath)
-{   
-    std::string vertexShader = ParseShader(vertexShaderFilePath);
-    std::string fragmentShader = ParseShader(fragmentShaderFilePath);
-
-    unsigned int program = glCreateProgram();
-    unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
-    unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
-    
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
-    glLinkProgram(program);
-    glValidateProgram(program);
-
-    // Check linking status of the program
-    int  success;
-    char infoLog[512];
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    
-    if(!success) {
-        glGetProgramInfoLog(program, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
-
-    glDeleteShader(vs);
-    glDeleteShader(fs);
-
-    return program;
-}
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -128,17 +65,16 @@ int main()
     std::string fragment2ShaderFilePath = "../res/shaders/fragment_shader_2.glsl";
 
     // Create the shader program
-    unsigned int shaderProgram1 = CreateShader(vertexShaderFilePath, fragmentShaderFilePath);
-    unsigned int shaderProgram2 = CreateShader(vertexShaderFilePath, fragment2ShaderFilePath);
-
-    
+    Shader shaderProgram1(vertexShaderFilePath, fragmentShaderFilePath);
+    Shader shaderProgram2(vertexShaderFilePath, fragment2ShaderFilePath);
 
     // SET UP VERTEX DATA - BUFFERS AND CONFIG VERTEX ATTRIBUTES ------------------------------
     // Define vertices
     float firstTriangle[] = {
-        -0.5f,  -0.5f, 0.0f,  // top right
-        0.0f, -0.5f, 0.0f,  // bottom right
-        -0.25f, -0.0f, 0.0f, // bottom left
+    // positions         // colors
+     0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
+    -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
+     0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // top 
     };
 
     float secondTriangle[] = {
@@ -169,10 +105,14 @@ int main()
     //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     
     // Tell OpenGL how it should interpret the vertex data
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // ---- Second traingle ------
+    // Tell OpenGL how it should interpret the vertex data
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // ---- Second triangle ------
     // Bind VAO first
     glBindVertexArray(VAO[1]);
     // Bind the created buffer to the GL_ARRAY_BUFFER
@@ -188,6 +128,10 @@ int main()
 
     glBindVertexArray(0); 
 
+    int nrAttributes;
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
+    std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
+
     // Uncomment to get only the lines
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -202,14 +146,20 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Draw the triangle
-        glUseProgram(shaderProgram1);
+
+        float timeValue = glfwGetTime();
+        float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
+        
+        shaderProgram1.use();
+        shaderProgram1.set_uniform("ourColor.y", greenValue);
+
         glBindVertexArray(VAO[0]);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        glUseProgram(shaderProgram2);
+        shaderProgram2.use();
+        
         glBindVertexArray(VAO[1]);
         glDrawArrays(GL_TRIANGLES, 0, 3);
-
         
         //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         
@@ -223,8 +173,6 @@ int main()
 
     glDeleteVertexArrays(2, VAO);
     glDeleteBuffers(2, VBO);
-    glDeleteProgram(shaderProgram1);
-    glDeleteProgram(shaderProgram2);
 
     glfwTerminate();
     return 0;
