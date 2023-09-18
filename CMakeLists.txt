@@ -13,6 +13,7 @@ find_package(OpenGL REQUIRED)
 
 # Include directories for glad.h and your project source files
 include_directories(${PROJECT_SOURCE_DIR}/libs/glad)
+include_directories(${PROJECT_SOURCE_DIR}/libs/stb)
 include_directories(${PROJECT_SOURCE_DIR})
 
 # Create executable using the specified src
@@ -21,6 +22,7 @@ add_executable(${PROJECT_NAME}
     src/Outing.cpp
     src/Shader.cpp
     ${PROJECT_SOURCE_DIR}/libs/glad/glad.c
+    ${PROJECT_SOURCE_DIR}/libs/stb/stb_image.cpp
 )
 
 # Define required C++ standard to C++11
