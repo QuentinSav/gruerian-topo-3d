@@ -14,6 +14,7 @@ find_package(OpenGL REQUIRED)
 # Include directories for glad.h and your project source files
 include_directories(${PROJECT_SOURCE_DIR}/libs/glad)
 include_directories(${PROJECT_SOURCE_DIR}/libs/stb)
+include_directories(${PROJECT_SOURCE_DIR}/libs/glm)
 include_directories(${PROJECT_SOURCE_DIR})
 
 # Create executable using the specified src
