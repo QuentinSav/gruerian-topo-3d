@@ -2,10 +2,10 @@
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
 #include <stdio.h>
-
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
+#include <stb_image.h>
 
 #include <iostream>
 #include <fstream>
@@ -14,71 +14,36 @@
 #include <cmath>
 
 #include <Shader.h>
-#include <stb_image.h>
+#include <Texture.h>
 
-static void texture_gen(std::string filePath)
-{
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
-    int width, height, nrChannels;
-    stbi_set_flip_vertically_on_load(true); 
-    unsigned char *data = stbi_load(filePath.c_str(), &width, &height, &nrChannels, 0);
-    if (data)
-    {   
-        if (filePath.find(".jpg") != std::string::npos) 
-        {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-            glGenerateMipmap(GL_TEXTURE_2D);
-        }
-        else if (filePath.find(".png") != std::string::npos)
-        {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-            glGenerateMipmap(GL_TEXTURE_2D);
-        }
-        else 
-        {
-            std::cout << "Unsupported file format" << std::endl;    
-        }
-    }
-    else
-    {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(data);
-}
-
-float mixRatio = 0.2f;
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}  
-
-void processInput(GLFWwindow *window)
-{
-    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-    {
-        mixRatio += 0.01f; // change this value accordingly (might be too slow or too fast based on system hardware)
-        if(mixRatio >= 1.0f)
-            mixRatio = 1.0f;
-    }
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-    {
-        mixRatio -= 0.01f; // change this value accordingly (might be too slow or too fast based on system hardware)
-        if (mixRatio <= 0.0f)
-            mixRatio = 0.0f;
-    }
-}
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void processInput(GLFWwindow *window);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
 // Settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+
+// Camera
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
+
+// Mouse 
+float lastX = 400, lastY = 300;
+float yaw = -90.0f;
+float pitch = 0.0f;
+float roll = 0.0f;
+bool firstMouse = true;
+
+
+// Timing
+float deltaTime = 0.0f;	// time between current frame and last frame
+float lastFrame = 0.0f;
+
+// Texture control
+float mixRatio = 0.2f;
+
 
 int main()
 {   
@@ -88,7 +53,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
+    
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
@@ -104,12 +69,16 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); 
+    glfwSetCursorPosCallback(window, mouse_callback); 
+    
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
+
+    glEnable(GL_DEPTH_TEST);
 
     // CREATING, COMPILING AND LINKING SHADERS ---------------------------------------------
     // Init file paths
@@ -222,20 +191,21 @@ int main()
 
 
     // GENERATING A TEXTURE -----------------------------------------------------------------------
-    unsigned int texture[2];
-    glGenTextures(2, texture);
-    
-    // Bind, load and generate the texture
-    glBindTexture(GL_TEXTURE_2D, texture[0]);
-    texture_gen("../res/textures/wall.jpg");
-
-    glBindTexture(GL_TEXTURE_2D, texture[1]);
-    // Bind, load and generate the texture
-    texture_gen("../res/textures/awesomeface.png");
-
+    // Bind, load and generate the texture    
+    Texture texture1(0);
+    texture1.generate("../res/textures/wall.jpg");
+    Texture texture2(1);
+    texture2.generate("../res/textures/awesomeface.png");
+float lastX = 400, lastY = 300;
     shaderProgram.use();
     shaderProgram.set_uniform("texture1", 0);
     shaderProgram.set_uniform("texture2", 1);
+
+
+    // pass projection matrix to shader (as projection matrix rarely changes there's no need to do this per frame)
+    // -----------------------------------------------------------------------------------------------------------
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    shaderProgram.set_uniform("projection", projection);
 
     // uncomment to print how many vertex attributes are supported
     //int nrAttributes;
@@ -248,48 +218,38 @@ int main()
     // RENDERING --------------------------------------------------------------
     while(!glfwWindowShouldClose(window))
     {
+        // Frame timing
+        float currentFrame = static_cast<float>(glfwGetTime());
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+        
         // input
         processInput(window);
 
         // rendering commands here
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        // Draw the triangle
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture[0]);        
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture[1]);
-        
-        glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // TRANSFORM -----------------------------------------------------------------------------
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f)); 
+        // Bind the textures
+        texture1.bind();
+        texture2.bind();        
 
-        glm::mat4 view = glm::mat4(1.0f);
-        // note that we're translating the scene in the reverse direction of where we want to move
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-
-        glm::mat4 projection;
-        projection = glm::perspective(glm::radians(70.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-
-        shaderProgram.set_uniform("model", model);
-        shaderProgram.set_uniform("view", view);
-        shaderProgram.set_uniform("projection", projection);
+        shaderProgram.use();
         shaderProgram.set_uniform("mixRatio", mixRatio);
-        
+
+        // Coordinate systems -----------------------------------------------------------------------------
+        // camera/view transformation
+        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        shaderProgram.set_uniform("view", view);        
+
         glBindVertexArray(VAO);
-        for(unsigned int i = 0; i < 10; i++)
+
+        for (unsigned int i = 0; i < 10; i++)
         {
-            glm::mat4 model = glm::mat4(1.0f);
+            // calculate the model matrix for each object and pass it to shader before drawing
+            glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
             model = glm::translate(model, cubePositions[i]);
-            float angle = 20.0f * i; 
-
-            if (i % 3 == 0)
-                angle = 20.0f * glfwGetTime();
-
+            float angle = 20.0f * i;
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
             shaderProgram.set_uniform("model", model);
 
@@ -310,3 +270,70 @@ int main()
     glfwTerminate();
     return 0;
 }
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}  
+
+void processInput(GLFWwindow *window)
+{
+    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+    {
+        mixRatio += 0.01f; // change this value accordingly (might be too slow or too fast based on system hardware)
+        if(mixRatio >= 1.0f)
+            mixRatio = 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+    {
+        mixRatio -= 0.01f; // change this value accordingly (might be too slow or too fast based on system hardware)
+        if (mixRatio <= 0.0f)
+            mixRatio = 0.0f;
+    }
+
+    float cameraSpeed = static_cast<float>(2.5 * deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cameraPos += cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cameraPos -= cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+  
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; 
+    lastX = xpos;
+    lastY = ypos;
+
+    float sensitivity = 0.1f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    yaw   += xoffset;
+    pitch += yoffset;
+
+    if(pitch > 89.0f)
+        pitch = 89.0f;
+    if(pitch < -89.0f)
+        pitch = -89.0f;
+
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction.y = sin(glm::radians(pitch));
+    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(direction);
+}  

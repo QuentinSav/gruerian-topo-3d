@@ -22,6 +22,7 @@ add_executable(${PROJECT_NAME}
     src/main.cpp
     src/Outing.cpp
     src/Shader.cpp
+    src/Texture.cpp
     ${PROJECT_SOURCE_DIR}/libs/glad/glad.c
     ${PROJECT_SOURCE_DIR}/libs/stb/stb_image.cpp
 )
