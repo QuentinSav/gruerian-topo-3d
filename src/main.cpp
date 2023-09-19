@@ -278,10 +278,6 @@ int main()
         shaderProgram.set_uniform("model", model);
         shaderProgram.set_uniform("view", view);
         shaderProgram.set_uniform("projection", projection);
-
-
-
-        shaderProgram.use();
         shaderProgram.set_uniform("mixRatio", mixRatio);
         
         glBindVertexArray(VAO);
@@ -293,7 +289,7 @@ int main()
 
             if (i % 3 == 0)
                 angle = 20.0f * glfwGetTime();
-                 
+
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
             shaderProgram.set_uniform("model", model);
 
