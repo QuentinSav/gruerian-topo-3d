@@ -15,34 +15,26 @@
 
 #include <Shader.h>
 #include <Texture.h>
+#include <Camera.h>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, double pos_x_in, double pos_y_in);
+void scroll_callback(GLFWwindow* window, double offset_x, double offset_y);
 void processInput(GLFWwindow *window);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
 // Settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
-// Camera
-glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
-
-// Mouse 
-float lastX = 400, lastY = 300;
-float yaw = -90.0f;
-float pitch = 0.0f;
-float roll = 0.0f;
-bool firstMouse = true;
-
-
 // Timing
-float deltaTime = 0.0f;	// time between current frame and last frame
-float lastFrame = 0.0f;
+float frame_delta_time = 0.0f;	// time between current frame and last frame
+float last_frame_time = 0.0f;
+float current_frame_time = 0.0f;
 
 // Texture control
 float mixRatio = 0.2f;
+
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 
 int main()
@@ -60,7 +52,7 @@ int main()
 
     // GLFW WINDOW CREATION -----------------------------------------------------------------
     // Create window object
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Gruerian Topo 3D", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -69,8 +61,9 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); 
-    glfwSetCursorPosCallback(window, mouse_callback); 
     
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -196,7 +189,7 @@ int main()
     texture1.generate("../res/textures/wall.jpg");
     Texture texture2(1);
     texture2.generate("../res/textures/awesomeface.png");
-float lastX = 400, lastY = 300;
+    
     shaderProgram.use();
     shaderProgram.set_uniform("texture1", 0);
     shaderProgram.set_uniform("texture2", 1);
@@ -204,8 +197,6 @@ float lastX = 400, lastY = 300;
 
     // pass projection matrix to shader (as projection matrix rarely changes there's no need to do this per frame)
     // -----------------------------------------------------------------------------------------------------------
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-    shaderProgram.set_uniform("projection", projection);
 
     // uncomment to print how many vertex attributes are supported
     //int nrAttributes;
@@ -219,9 +210,9 @@ float lastX = 400, lastY = 300;
     while(!glfwWindowShouldClose(window))
     {
         // Frame timing
-        float currentFrame = static_cast<float>(glfwGetTime());
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
+        current_frame_time = static_cast<float>(glfwGetTime());
+        frame_delta_time = current_frame_time - last_frame_time;
+        last_frame_time = current_frame_time;
         
         // input
         processInput(window);
@@ -237,10 +228,13 @@ float lastX = 400, lastY = 300;
         shaderProgram.use();
         shaderProgram.set_uniform("mixRatio", mixRatio);
 
+        // pass projection matrix to shader (note that in this case it could change every frame)
+        glm::mat4 projection = glm::perspective(glm::radians(camera.m_zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        shaderProgram.set_uniform("projection", projection);
+
         // Coordinate systems -----------------------------------------------------------------------------
         // camera/view transformation
-        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        shaderProgram.set_uniform("view", view);        
+        shaderProgram.set_uniform("view", camera.get_view_matrix());        
 
         glBindVertexArray(VAO);
 
@@ -253,7 +247,7 @@ float lastX = 400, lastY = 300;
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
             shaderProgram.set_uniform("model", model);
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glDrawArrays(GL_TRIANGLES, 0, 36);    
         }
 
         //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -282,58 +276,44 @@ void processInput(GLFWwindow *window)
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-    {
-        mixRatio += 0.01f; // change this value accordingly (might be too slow or too fast based on system hardware)
-        if(mixRatio >= 1.0f)
-            mixRatio = 1.0f;
-    }
+        (mixRatio += 0.01f) ? mixRatio += 0.01f : mixRatio = 1.0f;
+    
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-    {
-        mixRatio -= 0.01f; // change this value accordingly (might be too slow or too fast based on system hardware)
-        if (mixRatio <= 0.0f)
-            mixRatio = 0.0f;
-    }
-
-    float cameraSpeed = static_cast<float>(2.5 * deltaTime);
+        (mixRatio -= 0.01f) ? mixRatio -= 0.01f : mixRatio = 1.0f;
+    
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        cameraPos += cameraSpeed * cameraFront;
+        camera.process_keyboard(FORWARD, frame_delta_time);
+    
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cameraPos -= cameraSpeed * cameraFront;
+        camera.process_keyboard(BACKWARD, frame_delta_time);
+    
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+        camera.process_keyboard(LEFT, frame_delta_time);
+    
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+        camera.process_keyboard(RIGHT, frame_delta_time);
+
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+void mouse_callback(GLFWwindow* window, double pos_x_in, double pos_y_in)
 {
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-  
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; 
-    lastX = xpos;
-    lastY = ypos;
+    float pos_x = static_cast<float>(pos_x_in);
+    float pos_y = static_cast<float>(pos_y_in);
+    
+    static float pos_x_last = pos_x;
+    static float pos_y_last = pos_y;
 
-    float sensitivity = 0.1f;
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
+    float offset_x = pos_x - pos_x_last;
+    float offset_y = pos_y_last - pos_y; 
 
-    yaw   += xoffset;
-    pitch += yoffset;
+    pos_x_last = pos_x;
+    pos_y_last = pos_y;
 
-    if(pitch > 89.0f)
-        pitch = 89.0f;
-    if(pitch < -89.0f)
-        pitch = -89.0f;
-
-    glm::vec3 direction;
-    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    direction.y = sin(glm::radians(pitch));
-    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    cameraFront = glm::normalize(direction);
+    camera.process_mouse_movement(offset_x, offset_y);
 }  
+
+void scroll_callback(GLFWwindow* window, double offset_x, double offset_y)
+{
+    float offset = static_cast<float>(offset_y);
+    camera.process_mouse_scroll(offset);
+}

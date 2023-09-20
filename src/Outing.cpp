@@ -15,7 +15,8 @@ long double toRadians(const long double & degree)
     return (one_deg * degree);
 }
 
-Outing::Outing(const string& file_path) {
+Outing::Outing(const string& file_path)
+{
     parse_gpxfile(file_path);
 }
 

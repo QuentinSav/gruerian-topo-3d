@@ -1,3 +1,6 @@
+#ifndef OUTING_H
+#define OUTING_H
+
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -8,8 +11,7 @@
 
 using namespace std;
 
-#ifndef OUTING_H
-#define OUTING_H
+
 
 long double toRadians(const long double & degree);
 
