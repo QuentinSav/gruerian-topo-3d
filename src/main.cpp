@@ -17,10 +17,14 @@
 #include <Texture.h>
 #include <Camera.h>
 
+#include <gdal/gdal_priv.h>
+#include <errno.h>
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double pos_x_in, double pos_y_in);
 void scroll_callback(GLFWwindow* window, double offset_x, double offset_y);
 void processInput(GLFWwindow *window);
+float* load_vertices_from_TIFF(std::string filepath);
 
 // Settings
 const unsigned int SCR_WIDTH = 800;
@@ -34,11 +38,15 @@ float current_frame_time = 0.0f;
 // Texture control
 float mixRatio = 0.2f;
 
+// Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 
 int main()
 {   
+    
+    float* verticesMap = load_vertices_from_TIFF("../../gruerian-topo-3d-data/swissalti.tif");
+
     // GLFW INIT AND CONF -------------------------------------------------------------------
     // Init windows and parameters
     glfwInit();
@@ -194,10 +202,7 @@ int main()
     shaderProgram.set_uniform("texture1", 0);
     shaderProgram.set_uniform("texture2", 1);
 
-
-    // pass projection matrix to shader (as projection matrix rarely changes there's no need to do this per frame)
-    // -----------------------------------------------------------------------------------------------------------
-
+    //load_tiff_function();
     // uncomment to print how many vertex attributes are supported
     //int nrAttributes;
     //glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
@@ -237,13 +242,13 @@ int main()
         shaderProgram.set_uniform("view", camera.get_view_matrix());        
 
         glBindVertexArray(VAO);
-
+    
         for (unsigned int i = 0; i < 10; i++)
         {
             // calculate the model matrix for each object and pass it to shader before drawing
             glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
             model = glm::translate(model, cubePositions[i]);
-            float angle = 20.0f * i;
+            float angle = 20.0f * i * glfwGetTime();
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
             shaderProgram.set_uniform("model", model);
 
@@ -316,4 +321,59 @@ void scroll_callback(GLFWwindow* window, double offset_x, double offset_y)
 {
     float offset = static_cast<float>(offset_y);
     camera.process_mouse_scroll(offset);
+}
+
+float* load_vertices_from_TIFF(std::string filepath)
+{
+    struct Vertex {
+        float x, y, z; // Coordinates
+    };
+
+    GDALDatasetUniquePtr poDataset;
+    GDALAllRegister();
+    const GDALAccess eAccess = GA_ReadOnly;
+    poDataset = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(filepath.c_str(), eAccess )));
+    if(!poDataset)
+    {
+        std::cout << "GDAL error: dataset not found" << std::endl;
+    }
+
+    GDALAllRegister();
+    
+    // Open the GDAL dataset
+    GDALDataset *poDataset = static_cast<GDALDataset*>(GDALOpen(filename, GA_ReadOnly));
+    if (poDataset == nullptr) {
+        // Handle dataset opening error
+        return std::vector<Vertex>();
+    }
+
+    // Get the raster band (assuming a single-band elevation dataset)
+    GDALRasterBand *poBand = poDataset->GetRasterBand(1);
+    int nXSize = poBand->GetXSize();
+    int nYSize = poBand->GetYSize();
+
+    // Create a vector to store vertices
+    std::vector<Vertex> vertices;
+    vertices.reserve(nXSize * nYSize);
+
+    // Read elevation data and convert to vertices
+    float *pafScanline = static_cast<float*>(CPLMalloc(sizeof(float) * nXSize));
+    for (int i = 0; i < nYSize; ++i) {
+        poBand->RasterIO(GF_Read, 0, i, nXSize, 1, pafScanline, nXSize, 1, GDT_Float32, 0, 0);
+
+        for (int j = 0; j < nXSize; ++j) {
+            Vertex vertex;
+            vertex.x = static_cast<float>(j); // X-coordinate
+            vertex.y = static_cast<float>(i); // Y-coordinate
+            vertex.z = pafScanline[j];        // Elevation (Z-coordinate)
+            vertices.push_back(vertex);
+        }
+    }
+
+    CPLFree(pafScanline);
+
+    // Close the dataset
+    GDALClose(poDataset);
+
+    return vertices;
 }

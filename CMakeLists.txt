@@ -10,6 +10,7 @@ set(CMAKE_BUILD_TYPE "Debug")
 # Optionally, add external libraries and link them to your project
 find_package(glfw3 REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(GDAL REQUIRED)
 
 # Include directories for glad.h and your project source files
 include_directories(${PROJECT_SOURCE_DIR}/libs/glad)
@@ -47,3 +48,4 @@ set_source_files_properties(${PROJECT_SOURCE_DIR}/libs/glad/glad.c PROPERTIES LA
 
 # Link GLFW and OpenGL libraries
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw OpenGL::GL)
+target_link_libraries(${PROJECT_NAME} PRIVATE GDAL::GDAL)
