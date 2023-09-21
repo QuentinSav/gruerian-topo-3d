@@ -1,24 +1,24 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
-#include <gtc/type_ptr.hpp>
-#include <stb_image.h>
+//#include <gtc/type_ptr.hpp>
+//#include <stb_image.h>
 
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <vector>
 
 #include <Shader.h>
 #include <Texture.h>
 #include <Camera.h>
+#include <DEM.h>
 
-#include <gdal/gdal_priv.h>
-#include <errno.h>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double pos_x_in, double pos_y_in);
@@ -31,7 +31,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // Timing
-float frame_delta_time = 0.0f;	// time between current frame and last frame
+float frame_delta_time = 0.0f;	
 float last_frame_time = 0.0f;
 float current_frame_time = 0.0f;
 
@@ -44,8 +44,6 @@ Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 int main()
 {   
-    
-    float* verticesMap = load_vertices_from_TIFF("../../gruerian-topo-3d-data/swissalti.tif");
 
     // GLFW INIT AND CONF -------------------------------------------------------------------
     // Init windows and parameters
@@ -164,31 +162,11 @@ int main()
     glm::vec3(-1.3f,  1.0f, -1.5f)  
 };
 
-    // Generate a buffer with unique ID VBO
-    unsigned int VBO, VAO, EBO;
-    glGenVertexArrays(1, &VAO); 
-    glGenBuffers(1, &VBO);  
-    glGenBuffers(1, &EBO); 
-    
-    //Bind VAO first
-    glBindVertexArray(VAO);
-    //Bind the created buffer to the GL_ARRAY_BUFFER
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    
-    // Copy the vertex data into buffer's memory
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);  
-    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    
-    // Positions attributes
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // Colors attributes
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3* sizeof(float)));
-    glEnableVertexAttribArray(1);
-    
-    glBindVertexArray(0); 
+    DEM molesonMap;
+    molesonMap.load_vertices_from_TIFF("../../gruerian-topo-3d-data/swissalti.tif");
+    molesonMap.compute_indexes();
+    //molesonMap.load_predefined_vertices();
+    molesonMap.bind();
 
 
     // GENERATING A TEXTURE -----------------------------------------------------------------------
@@ -209,7 +187,7 @@ int main()
     //std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
 
     // Uncomment to get only the lines
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // RENDERING --------------------------------------------------------------
     while(!glfwWindowShouldClose(window))
@@ -241,20 +219,16 @@ int main()
         // camera/view transformation
         shaderProgram.set_uniform("view", camera.get_view_matrix());        
 
-        glBindVertexArray(VAO);
-    
-        for (unsigned int i = 0; i < 10; i++)
-        {
-            // calculate the model matrix for each object and pass it to shader before drawing
-            glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-            model = glm::translate(model, cubePositions[i]);
-            float angle = 20.0f * i * glfwGetTime();
-            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-            shaderProgram.set_uniform("model", model);
+        molesonMap.bind_vertex_array();
+        //glBindVertexArray(VAO);
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);    
-        }
+        // calculate the model matrix for each object and pass it to shader before drawing
+        glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+        shaderProgram.set_uniform("model", model); 
 
+        //glDrawArrays(GL_TRIANGLES, 0, 36);   
+        glDrawElements(GL_TRIANGLES, 16000000, GL_UNSIGNED_INT, 0); 
+        
         //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         // check and call events and swap the buffers
@@ -262,9 +236,6 @@ int main()
         glfwPollEvents();
         
     }
-
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
 
     glfwTerminate();
     return 0;
@@ -323,57 +294,3 @@ void scroll_callback(GLFWwindow* window, double offset_x, double offset_y)
     camera.process_mouse_scroll(offset);
 }
 
-float* load_vertices_from_TIFF(std::string filepath)
-{
-    struct Vertex {
-        float x, y, z; // Coordinates
-    };
-
-    GDALDatasetUniquePtr poDataset;
-    GDALAllRegister();
-    const GDALAccess eAccess = GA_ReadOnly;
-    poDataset = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(filepath.c_str(), eAccess )));
-    if(!poDataset)
-    {
-        std::cout << "GDAL error: dataset not found" << std::endl;
-    }
-
-    GDALAllRegister();
-    
-    // Open the GDAL dataset
-    GDALDataset *poDataset = static_cast<GDALDataset*>(GDALOpen(filename, GA_ReadOnly));
-    if (poDataset == nullptr) {
-        // Handle dataset opening error
-        return std::vector<Vertex>();
-    }
-
-    // Get the raster band (assuming a single-band elevation dataset)
-    GDALRasterBand *poBand = poDataset->GetRasterBand(1);
-    int nXSize = poBand->GetXSize();
-    int nYSize = poBand->GetYSize();
-
-    // Create a vector to store vertices
-    std::vector<Vertex> vertices;
-    vertices.reserve(nXSize * nYSize);
-
-    // Read elevation data and convert to vertices
-    float *pafScanline = static_cast<float*>(CPLMalloc(sizeof(float) * nXSize));
-    for (int i = 0; i < nYSize; ++i) {
-        poBand->RasterIO(GF_Read, 0, i, nXSize, 1, pafScanline, nXSize, 1, GDT_Float32, 0, 0);
-
-        for (int j = 0; j < nXSize; ++j) {
-            Vertex vertex;
-            vertex.x = static_cast<float>(j); // X-coordinate
-            vertex.y = static_cast<float>(i); // Y-coordinate
-            vertex.z = pafScanline[j];        // Elevation (Z-coordinate)
-            vertices.push_back(vertex);
-        }
-    }
-
-    CPLFree(pafScanline);
-
-    // Close the dataset
-    GDALClose(poDataset);
-
-    return vertices;
-}

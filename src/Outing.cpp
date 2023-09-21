@@ -1,11 +1,4 @@
 #include "Outing.h"
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <string>
-#include <ctime>
-#include <vector>
-#include <cmath>
 
 using namespace std;
 

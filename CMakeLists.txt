@@ -25,6 +25,7 @@ add_executable(${PROJECT_NAME}
     src/Shader.cpp
     src/Texture.cpp
     src/Camera.cpp
+    src/DEM.cpp
     ${PROJECT_SOURCE_DIR}/libs/glad/glad.c
     ${PROJECT_SOURCE_DIR}/libs/stb/stb_image.cpp
 )
@@ -46,6 +47,6 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 # Ensure glad.c is compiled as C code
 set_source_files_properties(${PROJECT_SOURCE_DIR}/libs/glad/glad.c PROPERTIES LANGUAGE C)
 
-# Link GLFW and OpenGL libraries
+# Link GLFW, OpenGL and GDAL libraries
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw OpenGL::GL)
 target_link_libraries(${PROJECT_NAME} PRIVATE GDAL::GDAL)
