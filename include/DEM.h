@@ -39,6 +39,7 @@ public:
     void compute_indexes();
     void print_info();
     void bind();
+    void draw();
     void bind_vertex_array();
  
     std::vector<Vertex> m_vertices;

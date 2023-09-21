@@ -27,8 +27,8 @@ void processInput(GLFWwindow *window);
 float* load_vertices_from_TIFF(std::string filepath);
 
 // Settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1200;
+const unsigned int SCR_HEIGHT = 900;
 
 // Timing
 float frame_delta_time = 0.0f;	
@@ -41,6 +41,7 @@ float mixRatio = 0.2f;
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
+glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
 int main()
 {   
@@ -83,90 +84,21 @@ int main()
     // Init file paths
     std::string vertexShaderFilePath = "../res/shaders/vertex_shader.glsl";
     std::string fragmentShaderFilePath = "../res/shaders/fragment_shader.glsl";
-    std::string fragment2ShaderFilePath = "../res/shaders/fragment_shader_2.glsl";
+    std::string lightvertexShaderFilePath = "../res/shaders/light_vertex_shader.glsl";
+    std::string lightfragmentShaderFilePath = "../res/shaders/light_fragment_shader.glsl";
 
     // Create the shader program
+    Shader lightingShaderProgram(lightvertexShaderFilePath, lightfragmentShaderFilePath);
     Shader shaderProgram(vertexShaderFilePath, fragmentShaderFilePath);
 
     // SET UP VERTEX DATA - BUFFERS AND CONFIG VERTEX ATTRIBUTES ------------------------------
     // Define vertices
-    float vertices[] = {
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-};
- 
-/*    unsigned int indices[] = {  // note that we start from 0!
-         0,  1,  2,   // first triangle
-         3,  4,  5,   // second triangle
-         6,  7,  8,
-         9, 10, 11,
-        12, 13, 14,
-        15, 16, 17,
-        18, 19, 20,
-        21, 22, 23,
-        24, 25, 26,
-        27, 28, 29,
-        30, 31, 32,
-        33, 34, 35
-    };
-*/
-    glm::vec3 cubePositions[] = {
-    glm::vec3( 0.0f,  0.0f,  0.0f), 
-    glm::vec3( 2.0f,  5.0f, -15.0f), 
-    glm::vec3(-1.5f, -2.2f, -2.5f),  
-    glm::vec3(-3.8f, -2.0f, -12.3f),  
-    glm::vec3( 2.4f, -0.4f, -3.5f),  
-    glm::vec3(-1.7f,  3.0f, -7.5f),  
-    glm::vec3( 1.3f, -2.0f, -2.5f),  
-    glm::vec3( 1.5f,  2.0f, -2.5f), 
-    glm::vec3( 1.5f,  0.2f, -1.5f), 
-    glm::vec3(-1.3f,  1.0f, -1.5f)  
-};
-
-    DEM molesonMap;
-    molesonMap.load_vertices_from_TIFF("../../gruerian-topo-3d-data/swissalti.tif");
-    molesonMap.compute_indexes();
-    //molesonMap.load_predefined_vertices();
-    molesonMap.bind();
+    DEM landscape;
+    //molesonMap.load_vertices_from_TIFF("../../gruerian-topo-3d-data/swissalti.tif");
+    //molesonMap.compute_indexes();
+    landscape.load_predefined_vertices();
+    landscape.bind();
 
 
     // GENERATING A TEXTURE -----------------------------------------------------------------------
@@ -180,6 +112,18 @@ int main()
     shaderProgram.set_uniform("texture1", 0);
     shaderProgram.set_uniform("texture2", 1);
 
+
+    // Lighting 
+    unsigned int lightCubeVAO;
+    glGenVertexArrays(1, &lightCubeVAO);
+    glBindVertexArray(lightCubeVAO);
+    // we only need to bind to the VBO, the container's VBO's data already contains the data.
+    glBindBuffer(GL_ARRAY_BUFFER, landscape.m_VBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, landscape.m_EBO);
+    // set the vertex attribute 
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
     //load_tiff_function();
     // uncomment to print how many vertex attributes are supported
     //int nrAttributes;
@@ -187,7 +131,7 @@ int main()
     //std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
 
     // Uncomment to get only the lines
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // RENDERING --------------------------------------------------------------
     while(!glfwWindowShouldClose(window))
@@ -196,38 +140,48 @@ int main()
         current_frame_time = static_cast<float>(glfwGetTime());
         frame_delta_time = current_frame_time - last_frame_time;
         last_frame_time = current_frame_time;
-        
+
         // input
         processInput(window);
 
         // rendering commands here
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        lightingShaderProgram.use();
+        lightingShaderProgram.set_uniform("objectColor", 1.0f, 0.5f, 0.31f);
+        lightingShaderProgram.set_uniform("lightColor", 1.0f, 1.0f, 1.0f);
 
         // Bind the textures
         texture1.bind();
         texture2.bind();        
 
-        shaderProgram.use();
-        shaderProgram.set_uniform("mixRatio", mixRatio);
-
-        // pass projection matrix to shader (note that in this case it could change every frame)
+        // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.m_zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = camera.get_view_matrix();
+        lightingShaderProgram.set_uniform("projection", projection);
+        lightingShaderProgram.set_uniform("view", view);
+
+        // world transformation
+        glm::mat4 model = glm::mat4(1.0f);
+        lightingShaderProgram.set_uniform("model", model);
+
+        landscape.bind_vertex_array();
+        landscape.draw();
+        
+        // also draw the lamp object
+        shaderProgram.use();
         shaderProgram.set_uniform("projection", projection);
+        shaderProgram.set_uniform("view", view);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, lightPos);
+        model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+        shaderProgram.set_uniform("model", model);
 
-        // Coordinate systems -----------------------------------------------------------------------------
-        // camera/view transformation
-        shaderProgram.set_uniform("view", camera.get_view_matrix());        
-
-        molesonMap.bind_vertex_array();
-        //glBindVertexArray(VAO);
-
-        // calculate the model matrix for each object and pass it to shader before drawing
-        glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-        shaderProgram.set_uniform("model", model); 
-
-        //glDrawArrays(GL_TRIANGLES, 0, 36);   
-        glDrawElements(GL_TRIANGLES, 16000000, GL_UNSIGNED_INT, 0); 
+        //glBindVertexArray(lightCubeVAO);
+        //glDrawArrays(GL_TRIANGLES, 0, 36);
+        //glDrawArrays(GL_TRIANGLES, 0, 36); 
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);  
+        //landscape.draw();
         
         //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 

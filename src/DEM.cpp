@@ -37,7 +37,7 @@ void DEM::load_vertices_from_TIFF(std::string filepath)
     float *ptr_scanline = static_cast<float*>(CPLMalloc(sizeof(float) * m_size_x));
     float max_elevation = 1996.19;
     float min_elevation = 1486.64;
-    
+    float scale_factor = 50;
     Vertex vertex;
     for (int j = 0; j < m_size_y; ++j) {
         CPLErr error = ptr_band->RasterIO(GF_Read, 0, j, m_size_y, 1, ptr_scanline, m_size_x, 1, GDT_Float32, 0, 0);
@@ -45,17 +45,14 @@ void DEM::load_vertices_from_TIFF(std::string filepath)
         
         for (int i = 0; i < m_size_x; ++i) {
             
-            vertex.x = static_cast<float>(i)/100; // X-coordinate
-            vertex.y = static_cast<float>(j)/100; // Y-coordinate
-            //vertex.z = (ptr_scanline[j] - min_elevation)/(max_elevation - min_elevation);        // Elevation (Z-coordinate)
-            vertex.z = (ptr_scanline[i] - min_elevation)/100;
+            vertex.x = static_cast<float>(i)/scale_factor; // X-coordinate
+            vertex.y = (ptr_scanline[i] - min_elevation)/scale_factor;
+            vertex.z = static_cast<float>(j)/scale_factor;
             m_vertices.push_back(vertex);
         }
-
-        std::cout << "x =" << vertex.x << ", y =" << vertex.y << ", z =" << vertex.z << std::endl;
     }
 
-    std::cout << m_vertices.size() << std::endl;
+    
 
     CPLFree(ptr_scanline);
      
@@ -226,10 +223,16 @@ void DEM::compute_indexes()
             indexes.p2 = k+m_size_x+1;
             indexes.p3 = k+m_size_x;
             m_indexes.push_back(indexes);
-
         }
     }
 
+    std::cout << m_indexes.size() << std::endl;
+
+}
+
+void DEM::draw()
+{
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0); 
 }
 
 void DEM::print_info()
