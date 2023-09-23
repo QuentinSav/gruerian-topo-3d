@@ -1,11 +1,11 @@
-#include "DEM.h"
+#include "DigitalElevationModel.h"
 
-DEM::DEM()
+DigitalElevationModel::DigitalElevationModel()
 {
 
 }
 
-DEM::~DEM()
+DigitalElevationModel::~DigitalElevationModel()
 {
     // Need to free memory of ptr_dataset
     //GDALClose(static_cast<GDALDatasetH>(m_ptr_dataset));
@@ -16,7 +16,7 @@ DEM::~DEM()
     glDeleteBuffers(1, &m_VBO);
 }
 
-void DEM::load_vertices_from_TIFF(std::string filepath)
+void DigitalElevationModel::load_vertices_from_TIFF(std::string filepath)
 {
     GDALAllRegister();
 
@@ -58,7 +58,7 @@ void DEM::load_vertices_from_TIFF(std::string filepath)
      
 }
 
-void DEM::load_predefined_vertices()
+void DigitalElevationModel::load_predefined_vertices()
 {
     /*m_vertices = {
     {-0.5f, -0.5f, -0.5f,  0.0f, 0.0f},
@@ -169,7 +169,8 @@ void DEM::load_predefined_vertices()
     };
 }
 
-void DEM::bind()
+void DigitalElevationModel::bind()
+// TODO should be done in the renderer
 {
     
     // Generate a buffer with unique ID VBO
@@ -198,12 +199,13 @@ void DEM::bind()
     glBindVertexArray(0); 
 }
 
-void DEM::bind_vertex_array()
+void DigitalElevationModel::bind_vertex_array()
+// TODO should be done in the renderer
 {
     glBindVertexArray(m_VAO);
 }
 
-void DEM::compute_indexes()
+void DigitalElevationModel::compute_indexes()
 {
     // Create a vector to store vertices
     m_indexes.reserve((m_size_x - 1) * (m_size_y - 1) * 2);
@@ -230,12 +232,12 @@ void DEM::compute_indexes()
 
 }
 
-void DEM::draw()
+void DigitalElevationModel::draw()
 {
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0); 
 }
 
-void DEM::print_info()
+void DigitalElevationModel::print_info()
 {
     double adfGeoTransform[6];
     printf( "Driver: %s/%s\n",

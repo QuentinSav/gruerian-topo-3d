@@ -1,5 +1,5 @@
-#ifndef MAP_H
-#define MAP_H
+#ifndef DIGITALELEVATIONMODEL_H
+#define DIGITALELEVATIONMODEL_H
 
 #include <iostream>
 #include <iomanip>
@@ -19,10 +19,10 @@
 using namespace std;
 
 
-class DEM {
+class DigitalElevationModel {
 public:
-    DEM();
-    ~DEM();
+    DigitalElevationModel();
+    ~DigitalElevationModel();
 
     struct Vertex 
     {
@@ -50,4 +50,4 @@ public:
     
 };
 
-#endif // MAP_H
+#endif // DIGITALELEVATIONMODEL_H

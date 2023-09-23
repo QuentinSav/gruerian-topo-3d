@@ -11,8 +11,6 @@
 
 using namespace std;
 
-
-
 long double toRadians(const long double & degree);
 
 class Outing {

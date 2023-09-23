@@ -21,11 +21,13 @@ include_directories(${PROJECT_SOURCE_DIR})
 # Create executable using the specified src
 add_executable(${PROJECT_NAME}
     src/main.cpp
-    src/Outing.cpp
-    src/Shader.cpp
-    src/Texture.cpp
-    src/Camera.cpp
-    src/DEM.cpp
+    src/controler/InputControler.cpp
+    src/model/Outing.cpp
+    src/model/Texture.cpp
+    src/model/DigitalElevationModel.cpp
+    src/view/Renderer.cpp
+    src/util/Shader.cpp
+    src/util/Camera.cpp
     ${PROJECT_SOURCE_DIR}/libs/glad/glad.c
     ${PROJECT_SOURCE_DIR}/libs/stb/stb_image.cpp
 )

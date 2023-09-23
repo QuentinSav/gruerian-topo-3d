@@ -1,11 +1,11 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
-//#include <stdio.h>
+#include <stdio.h>
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
-//#include <gtc/type_ptr.hpp>
-//#include <stb_image.h>
+#include <gtc/type_ptr.hpp>
+#include <stb_image.h>
 
 #include <iostream>
 #include <fstream>
@@ -17,14 +17,13 @@
 #include <Shader.h>
 #include <Texture.h>
 #include <Camera.h>
-#include <DEM.h>
-
+#include <InputControler.h>
+#include <DigitalElevationModel.h>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double pos_x_in, double pos_y_in);
 void scroll_callback(GLFWwindow* window, double offset_x, double offset_y);
-void processInput(GLFWwindow *window);
-float* load_vertices_from_TIFF(std::string filepath);
+//void processInput(GLFWwindow *window);
 
 // Settings
 const unsigned int SCR_WIDTH = 1200;
@@ -34,9 +33,6 @@ const unsigned int SCR_HEIGHT = 900;
 float frame_delta_time = 0.0f;	
 float last_frame_time = 0.0f;
 float current_frame_time = 0.0f;
-
-// Texture control
-float mixRatio = 0.2f;
 
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -94,7 +90,7 @@ int main()
     // SET UP VERTEX DATA - BUFFERS AND CONFIG VERTEX ATTRIBUTES ------------------------------
     // Define vertices
 
-    DEM landscape;
+    DigitalElevationModel landscape;
     //molesonMap.load_vertices_from_TIFF("../../gruerian-topo-3d-data/swissalti.tif");
     //molesonMap.compute_indexes();
     landscape.load_predefined_vertices();
@@ -133,6 +129,8 @@ int main()
     // Uncomment to get only the lines
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+    InputControler input_controler(window, camera);
+
     // RENDERING --------------------------------------------------------------
     while(!glfwWindowShouldClose(window))
     {
@@ -142,7 +140,7 @@ int main()
         last_frame_time = current_frame_time;
 
         // input
-        processInput(window);
+        input_controler.process_keyboard_input(frame_delta_time);
 
         // rendering commands here
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -179,7 +177,6 @@ int main()
 
         //glBindVertexArray(lightCubeVAO);
         //glDrawArrays(GL_TRIANGLES, 0, 36);
-        //glDrawArrays(GL_TRIANGLES, 0, 36); 
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);  
         //landscape.draw();
         
@@ -200,30 +197,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }  
 
-void processInput(GLFWwindow *window)
-{
-    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-        (mixRatio += 0.01f) ? mixRatio += 0.01f : mixRatio = 1.0f;
-    
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        (mixRatio -= 0.01f) ? mixRatio -= 0.01f : mixRatio = 1.0f;
-    
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.process_keyboard(FORWARD, frame_delta_time);
-    
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.process_keyboard(BACKWARD, frame_delta_time);
-    
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.process_keyboard(LEFT, frame_delta_time);
-    
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.process_keyboard(RIGHT, frame_delta_time);
-
-}
 
 void mouse_callback(GLFWwindow* window, double pos_x_in, double pos_y_in)
 {
