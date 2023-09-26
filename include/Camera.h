@@ -33,7 +33,7 @@ public:
     glm::vec3 m_up;
     glm::vec3 m_right;
     glm::vec3 m_world_up;
-
+    
     float m_yaw;
     float m_pitch;
     float m_roll;
@@ -44,15 +44,14 @@ public:
     
     Camera(glm::vec3 position = POSITION, glm::vec3 up = UP, float yaw = YAW, float pitch = PITCH);
     
-    void process_keyboard(Camera_Movement direction, const float& frame_delta_time);
-    void process_mouse_movement(float& offset_x, float& offset_y);
-    void process_mouse_scroll(float& offset_y);
+    void processTranslation(Camera_Movement direction, const float& frame_delta_time);
+    void processRotation(float& offset_x, float& offset_y);
+    void processZoom(float& offset_y);
 
-    glm::mat4 get_view_matrix();
-    
+    glm::mat4 getViewMatrix();
     
 private:
-    void update_camera_vectors();
+    void updateCameraVectors();
 };
 
 #endif // CAMERA_H

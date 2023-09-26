@@ -17,17 +17,10 @@
 #include <Shader.h>
 #include <Texture.h>
 #include <Camera.h>
-#include <InputControler.h>
+#include <InputController.h>
 #include <DigitalElevationModel.h>
+#include "Renderer.h"
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double pos_x_in, double pos_y_in);
-void scroll_callback(GLFWwindow* window, double offset_x, double offset_y);
-//void processInput(GLFWwindow *window);
-
-// Settings
-const unsigned int SCR_WIDTH = 1200;
-const unsigned int SCR_HEIGHT = 900;
 
 // Timing
 float frame_delta_time = 0.0f;	
@@ -42,39 +35,8 @@ glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 int main()
 {   
 
-    // GLFW INIT AND CONF -------------------------------------------------------------------
-    // Init windows and parameters
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
+    Renderer renderer();
 
-    // GLFW WINDOW CREATION -----------------------------------------------------------------
-    // Create window object
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Gruerian Topo 3D", NULL, NULL);
-    if (window == NULL)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); 
-    
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
-
-    glEnable(GL_DEPTH_TEST);
 
     // CREATING, COMPILING AND LINKING SHADERS ---------------------------------------------
     // Init file paths
@@ -91,8 +53,8 @@ int main()
     // Define vertices
 
     DigitalElevationModel landscape;
-    //molesonMap.load_vertices_from_TIFF("../../gruerian-topo-3d-data/swissalti.tif");
-    //molesonMap.compute_indexes();
+    //landscape.load_vertices_from_TIFF("../../gruerian-topo-3d-data/swissalti.tif");
+    //landscape.compute_indexes();
     landscape.load_predefined_vertices();
     landscape.bind();
 
@@ -129,7 +91,7 @@ int main()
     // Uncomment to get only the lines
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    InputControler input_controler(window, camera);
+    
 
     // RENDERING --------------------------------------------------------------
     while(!glfwWindowShouldClose(window))
@@ -140,7 +102,7 @@ int main()
         last_frame_time = current_frame_time;
 
         // input
-        input_controler.process_keyboard_input(frame_delta_time);
+        input_controller.processKeyboard(frame_delta_time);
 
         // rendering commands here
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -155,7 +117,7 @@ int main()
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.m_zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = camera.get_view_matrix();
+        glm::mat4 view = camera.getViewMatrix();
         lightingShaderProgram.set_uniform("projection", projection);
         lightingShaderProgram.set_uniform("view", view);
 
@@ -192,32 +154,8 @@ int main()
     return 0;
 }
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}  
 
 
-void mouse_callback(GLFWwindow* window, double pos_x_in, double pos_y_in)
-{
-    float pos_x = static_cast<float>(pos_x_in);
-    float pos_y = static_cast<float>(pos_y_in);
-    
-    static float pos_x_last = pos_x;
-    static float pos_y_last = pos_y;
 
-    float offset_x = pos_x - pos_x_last;
-    float offset_y = pos_y_last - pos_y; 
 
-    pos_x_last = pos_x;
-    pos_y_last = pos_y;
-
-    camera.process_mouse_movement(offset_x, offset_y);
-}  
-
-void scroll_callback(GLFWwindow* window, double offset_x, double offset_y)
-{
-    float offset = static_cast<float>(offset_y);
-    camera.process_mouse_scroll(offset);
-}
 

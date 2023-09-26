@@ -21,9 +21,11 @@ include_directories(${PROJECT_SOURCE_DIR})
 # Create executable using the specified src
 add_executable(${PROJECT_NAME}
     src/main.cpp
-    src/controler/InputControler.cpp
+    src/controler/InputController.cpp
     src/model/Outing.cpp
     src/model/Texture.cpp
+    src/model/Model.cpp
+    src/model/Light.cpp
     src/model/DigitalElevationModel.cpp
     src/view/Renderer.cpp
     src/util/Shader.cpp
