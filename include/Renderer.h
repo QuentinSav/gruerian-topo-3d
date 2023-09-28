@@ -5,8 +5,8 @@
 #include <GLFW/glfw3.h>
 
 #include "Camera.h"
-#include "Model.h"
-#include "DigitalElevationModel.h"
+#include "Mesh.h"
+#include "MeshDEM.h"
 #include "Shader.h"
 #include "Light.h"
 #include "InputController.h"
@@ -23,17 +23,15 @@ private:
     // Objects
     Camera& m_camera;
     InputController& m_input_controller = InputController::getInstance();
-    std::vector<Model*> m_models;
-    std::vector<Shader*> m_shaders;
-    std::vector<Texture*> m_textures;
-    //std::vector<Light*> m_lights;   
+    std::vector<Mesh*> m_meshes;
+       
+    glm::vec3 m_light_position = glm::vec3(1.2f, 1.0f, 2.0f);
 
 public:
-    Renderer();
+    Renderer(Camera& camera);
     ~Renderer();
     void renderLoop();
-
-
+    void link(Mesh* mesh);
 };
 
 #endif // RENDERER_H

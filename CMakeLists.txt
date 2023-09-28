@@ -24,9 +24,9 @@ add_executable(${PROJECT_NAME}
     src/controler/InputController.cpp
     src/model/Outing.cpp
     src/model/Texture.cpp
-    src/model/Model.cpp
+    src/model/Mesh.cpp
     src/model/Light.cpp
-    src/model/DigitalElevationModel.cpp
+    src/model/MeshDEM.cpp
     src/view/Renderer.cpp
     src/util/Shader.cpp
     src/util/Camera.cpp

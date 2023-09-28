@@ -13,10 +13,6 @@
 class Texture
 {
 public:
-    // the program ID
-    unsigned int m_id;
-    unsigned int m_index;
-  
     // Constructor: reads and builds the shader
     Texture(unsigned int index);
     
@@ -25,6 +21,12 @@ public:
 
     // Utility functions
     void generate(const std::string name) const;  
+    unsigned int getId();
+
+private:
+    unsigned int m_id;
+    unsigned int m_index;
+  
 };
   
 #endif

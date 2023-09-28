@@ -43,6 +43,11 @@ void Texture::generate(const std::string filePath) const
 
 }
 
+unsigned int Texture::getId()
+{
+    return m_id;
+}
+
 void Texture::bind()
 {
     glActiveTexture(GL_TEXTURE0 + m_index);

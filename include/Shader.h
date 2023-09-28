@@ -27,7 +27,7 @@ public:
 
     // Utility functions
     void set_uniform(const std::string& name, bool value) const;  
-    void set_uniform(const std::string& name, int value) const;   
+    void set_uniform(const std::string& name, unsigned int value) const;   
     void set_uniform(const std::string& name, float value) const;
     void set_uniform(const std::string &name, const glm::vec2 &value) const;
     void set_uniform(const std::string &name, float x, float y) const;
