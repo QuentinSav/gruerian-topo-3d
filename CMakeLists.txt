@@ -26,6 +26,7 @@ add_executable(${PROJECT_NAME}
     src/model/Texture.cpp
     src/model/Mesh.cpp
     src/model/Light.cpp
+    src/model/Skybox.cpp
     src/model/MeshDEM.cpp
     src/view/Renderer.cpp
     src/util/Shader.cpp

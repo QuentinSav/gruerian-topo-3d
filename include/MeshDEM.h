@@ -12,20 +12,32 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <CGAL/Simple_cartesian.h>
 
 #include <gdal/gdal_priv.h>
 #include <errno.h>
 
 #include "Mesh.h"
 
+//#include <vector>
+//#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+//#include <CGAL/Delaunay_triangulation_2.h>
+
+//typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+//typedef K::Point_2 Point_2;
+//typedef CGAL::Delaunay_triangulation_2<K> Delaunay;
+
+
 using namespace std;
 
 
 class MeshDEM : public Mesh {
 public:
-    void load_vertices_from_TIFF(std::string filepath);
-    void compute_indexes();
-    void print_info();
+    void loadVerticesFromTIFF(std::string filepath);
+    void decimateGrid();
+    void computeIndexes();
+    void computeNormals();
+    void printInfo();
     GDALDatasetUniquePtr m_ptr_dataset;
 };
 

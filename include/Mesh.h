@@ -16,15 +16,13 @@
 #include "Texture.h"
 #include "Shader.h"
 
-
-using namespace std;
-
-struct Vertex 
+struct Vertex
 {
-    float x, y, z, normal_x, normal_y, normal_z;
+    float x, y, z;
+    float normal_x, normal_y, normal_z;
 };
 
-struct TriangleIndexes 
+struct Face 
 {
     unsigned int p1, p2, p3;
 };
@@ -48,13 +46,13 @@ public:
     unsigned int m_VBO, m_VAO, m_EBO;
 
     void loadPredefinedVertices();
-    void setup();
+    virtual void setup();
     void bindVertexArray();
-    void draw();
+    virtual void draw();
 
 protected:
     std::vector<Vertex> m_vertices;    
-    std::vector<TriangleIndexes> m_indexes;
+    std::vector<Face> m_faces;
     std::vector<Texture*> m_textures;
     std::vector<Shader*> m_shaders;
     std::vector<glm::mat4> m_model_transforms;

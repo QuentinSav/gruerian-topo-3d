@@ -84,22 +84,25 @@ void Renderer::renderLoop()
                     shader->set_uniform("projection", projection_transform);
                     shader->set_uniform("model", model_transform);
                     shader->set_uniform("view", m_camera.getViewMatrix());
+                    shader->set_uniform("view_cubemap", m_camera.getViewMatrix());
+                    //shader->set_uniform("view_cubemap", glm::mat4(glm::mat3(m_camera.getViewMatrix()))); // Removed translation
 
                     // Set lighting
                     shader->set_uniform("objectColor", glm::vec3(0.2f, 0.5f, 1.0f));
-                    shader->set_uniform("lightColor", glm::vec3(1.0f, 0.5-sin(3*glfwGetTime())/2, 1.0f));
+                    shader->set_uniform("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
                     shader->set_uniform("lightPos", m_light_position);
                     shader->set_uniform("viewPos", m_camera.getPosition());
                     
                     for (Texture* texture: mesh->getLinkedTextures())
                     {
-                        texture->bind();
-                        shader->set_uniform("texture"+texture->getId(), texture->getId());
+                        //texture->bind();
+                        shader->set_uniform(("texture"+std::to_string(texture->getId())), texture->getId());
                     }
                 }
                 
                 mesh->bindVertexArray();
                 mesh->draw();
+                
             }
         }
 

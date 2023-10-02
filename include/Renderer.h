@@ -25,7 +25,7 @@ private:
     InputController& m_input_controller = InputController::getInstance();
     std::vector<Mesh*> m_meshes;
        
-    glm::vec3 m_light_position = glm::vec3(1.2f, 1.0f, 2.0f);
+    glm::vec3 m_light_position = glm::vec3(50.0f, 1.0f, -40.0f);
 
 public:
     Renderer(Camera& camera);

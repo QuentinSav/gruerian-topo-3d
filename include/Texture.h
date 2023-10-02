@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <vector>
 
 #include <stb_image.h>
 
@@ -20,7 +21,8 @@ public:
     void bind();
 
     // Utility functions
-    void generate(const std::string name) const;  
+    void generate(const std::string name) const; 
+    void generateCubeMap(std::string directory, std::vector<std::string> faces);
     unsigned int getId();
 
 private:

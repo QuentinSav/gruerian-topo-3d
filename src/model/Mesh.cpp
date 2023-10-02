@@ -62,7 +62,7 @@ void Mesh::loadPredefinedVertices()
         {-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f}
     };
 
-    m_indexes = {
+    m_faces = {
         {0, 1, 2},
         {3, 4, 5},
         
@@ -100,7 +100,7 @@ void Mesh::setup()
     
     // Copy the vertex data into buffer's memory
     glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(Vertex), m_vertices.data(), GL_STATIC_DRAW);  
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indexes.size() * sizeof(TriangleIndexes), m_indexes.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_faces.size() * sizeof(Face), m_faces.data(), GL_STATIC_DRAW);
     
     // Positions attributes
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
@@ -151,5 +151,5 @@ void Mesh::bindVertexArray()
 
 void Mesh::draw()
 {
-    glDrawElements(GL_TRIANGLES, m_vertices.size(), GL_UNSIGNED_INT, 0); 
+    glDrawElements(GL_TRIANGLES, 3 * m_faces.size(), GL_UNSIGNED_INT, 0); 
 }
